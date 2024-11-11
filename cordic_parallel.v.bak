@@ -1,0 +1,67 @@
+module cordic_parallel #(
+    parameter W = 16,  // Bit width
+    parameter N = 16   // Number of iterations
+)(
+    input wire clk,
+    input wire rst,
+    input wire [W-1:0] x_in,
+    input wire [W-1:0] y_in,
+    input wire [W-1:0] z_in,
+    output wire [W-1:0] x_out,
+    output wire [W-1:0] y_out,
+    output wire [W-1:0] z_out
+);
+
+    // Internal registers
+    reg [W-1:0] x [0:N-1];
+    reg [W-1:0] y [0:N-1];
+    reg [W-1:0] z [0:N-1];
+
+    // Constants for arctan values
+    wire [W-1:0] atan_table [0:N-1];
+    assign atan_table[0]  = 16'd12868;  // atan(2^0)  * 2^15
+    assign atan_table[1]  = 16'd7596;   // atan(2^-1) * 2^15
+    assign atan_table[2]  = 16'd4013;   // atan(2^-2) * 2^15
+    assign atan_table[3]  = 16'd2037;   // atan(2^-3) * 2^15
+    assign atan_table[4]  = 16'd1021;   // atan(2^-4) * 2^15
+    assign atan_table[5]  = 16'd510;    // atan(2^-5) * 2^15
+    assign atan_table[6]  = 16'd255;    // atan(2^-6) * 2^15
+    assign atan_table[7]  = 16'd128;    // atan(2^-7) * 2^15
+    assign atan_table[8]  = 16'd64;     // atan(2^-8) * 2^15
+    assign atan_table[9]  = 16'd32;     // atan(2^-9) * 2^15
+    assign atan_table[10] = 16'd16;     // atan(2^-10) * 2^15
+    assign atan_table[11] = 16'd8;      // atan(2^-11) * 2^15
+    assign atan_table[12] = 16'd4;      // atan(2^-12) * 2^15
+    assign atan_table[13] = 16'd2;      // atan(2^-13) * 2^15
+    assign atan_table[14] = 16'd1;      // atan(2^-14) * 2^15
+    assign atan_table[15] = 16'd0;      // atan(2^-15) * 2^15
+
+    integer i;
+
+    // Initial assignments
+    always @(posedge clk or posedge rst) begin
+        if (rst) begin
+            x[0] <= x_in;
+            y[0] <= y_in;
+            z[0] <= z_in;
+        end else begin
+            for (i = 0; i < N-1; i = i + 1) begin
+                if (z[i] >= 0) begin
+                    x[i+1] <= x[i] - (y[i] >>> i);
+                    y[i+1] <= y[i] + (x[i] >>> i);
+                    z[i+1] <= z[i] - atan_table[i];
+                end else begin
+                    x[i+1] <= x[i] + (y[i] >>> i);
+                    y[i+1] <= y[i] - (x[i] >>> i);
+                    z[i+1] <= z[i] + atan_table[i];
+                end
+            end
+        end
+    end
+
+    // Outputs
+    assign x_out = x[N-1];
+    assign y_out = y[N-1];
+    assign z_out = z[N-1];
+
+endmodule
