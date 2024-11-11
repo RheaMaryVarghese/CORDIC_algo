@@ -38,6 +38,7 @@ module cordic_parallel #(parameter WIDTH = 16, STAGES = 16) (
 
     integer i;
     always @(posedge clk or posedge rst) begin
+	     // Initialize the first stage with input values
         if (rst) begin
             for (i = 0; i < STAGES; i = i + 1) begin
                 x[i] <= 0;
@@ -45,7 +46,7 @@ module cordic_parallel #(parameter WIDTH = 16, STAGES = 16) (
                 z[i] <= 0;
             end
         end else begin
-            // Initialize the first stage with input values
+           
 				
 				case(angle_in[(WIDTH-1):(WIDTH-3)])
 				
